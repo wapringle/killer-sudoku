@@ -12,6 +12,10 @@ def tuple2id(t): return "i%d%d" % t
 
 def id2tuple(id): return (int(id[1]),int(id[2]))
 
+"""
+for a,b in re.findall(r'def (\w*).*:\n *return (\w*)',t,flags=re.MULTILINE): print(f'    {a}={b}')
+
+"""
 class State():
     def is_clicked(self): return False
     def name(self): 
@@ -26,23 +30,23 @@ class State():
         return caged()
     
 class unused(State):
-    def background(self):
-        return 'ivory'
+    background='ivory'
+
     def mousein(self):
         return highlight()
     
 class highlight(State):
-    def background(self):
-        return '#eefbff'
+    background='#eefbff'
+
     def click(self):
         return clicked()
     def mouseout(self):
         return unused()
     
 class clicked(State):
+    background='#f33fba4d'
+    
     def is_clicked(self): return True
-    def background(self):
-        return '#f33fba4d'
     def grouped(self):
         return caged()
     def click(self):
@@ -53,8 +57,8 @@ class clicked(State):
         return clicked()
     
 class caged(State):
-    def background(self):
-        return 'beige'
+    background='beige'
+
     def grouped(self):
         return caged()
     def mousein(self):
@@ -69,8 +73,8 @@ class caged(State):
         return caged()
     
 class higrouped(State):
-    def background(self):
-        return 'bisque'
+    background='bisque'
+
     def mouseout(self):
         return caged()
     def click(self):
@@ -84,22 +88,8 @@ class GridSquare():
     def __init__(self,id):
         self.id=id
         self.status=unused()
-        
-    def on_clicked(self):
-        self.status=self.status.click()
-        pass
-        
-    def on_grouped(self):
-        self.status=self.status.grouped()
-        pass
-        
-    def on_mouse_enter(self):
-        self.status=self.status.mousein()
-        pass
-    
-    def on_mouse_leave(self):
-        self.status=self.status.mouseout()
-        pass
+    def action(self,act):
+        self.status=getattr(self.status,act)()
 
 def initCell(row,column):
     global gridDict
@@ -121,21 +111,16 @@ def remove_box_for_id(id):
             return
     
 def setCageStyle(idList,style):
-    tList= [ id2tuple(id) for id in idList]
-    for (r,c) in tList:
-        t=(r,c)
-        if (r,c-1) not in tList:
-            document[tuple2id(t)].style.borderLeft=style
-            pass
-        if (r,c+1) not in tList:
-            document[tuple2id(t)].style.borderRight=style
-            pass
-        if (r-1,c) not in tList:
-            document[tuple2id(t)].style.borderTop=style
-            pass
-        if (r+1,c) not in tList:
-            document[tuple2id(t)].style.borderBottom=style
-            pass
+    def makeEdge(t,border):
+        if tuple2id(t) not in idList:
+            setattr(document[id].style,border,style)
+    for id in idList:
+        (r,c)=id2tuple(id)
+        makeEdge((r,c-1) , "borderLeft")
+        makeEdge((r,c+1) , "borderRight")
+        makeEdge((r-1,c) , "borderTop")
+        makeEdge((r+1,c) , "borderBottom")
+
 
 def get_clicked_cells():
     return sorted([k for k,v in gridDict.items() if v.status.is_clicked() ])
@@ -147,7 +132,7 @@ def set_backGround(id,cell):
     #print(f'cell {id} class from {document[id].Class} to {cell.status.name()}')
     #document[id].Class=cell.status.name()
     
-    document[id].style.backgroundColor=cell.status.background()
+    document[id].style.backgroundColor=cell.status.background
     
 def on_number_button_pressed(ev):  # wxGlade: MyFrame.<event_handler>
     
@@ -163,7 +148,7 @@ def add_cage(boxCount,idList):
     global boxList,gridDict
     for s in idList:
         b=gridDict[s]
-        b.on_grouped()
+        b.action("grouped")
         itm=document[b.id]
         set_backGround(b.id, b)
         #itm.style.backgroundColor=b.status.background()
@@ -183,7 +168,7 @@ def on_grid_button_pressed(ev):
     idList=members_of_group(itm.id,True)
     for id in idList:
         cell=gridDict[id]
-        cell.on_clicked()
+        cell.action("click")
         set_backGround(id, cell)
         document[id].text=""
         #document[id].style.backgroundColor=cell.status.background()
@@ -197,7 +182,7 @@ def on_mouse_enter(ev):
     itm=ev.currentTarget
     for id in members_of_group(itm.id,True):
         cell=gridDict[id]
-        cell.on_mouse_enter()
+        cell.action("mousein")
         set_backGround(id, cell)
         
         #document[id].style.backgroundColor=cell.status.background()
@@ -207,7 +192,7 @@ def on_mouse_leave(ev):
     idList=members_of_group(itm.id,True)
     for id in idList:
         cell=gridDict[id]
-        cell.on_mouse_leave()
+        cell.action("mouseout")
         set_backGround(id, cell)
         #document[id].style.backgroundColor=cell.status.background()
     
@@ -227,14 +212,19 @@ def show_solution(solution):
 
 import ktest
 
+def sample(ev):
+    global zz,boxList
+    document["button1"].textContent = "Solve"
+    boxList=[]
+    for (n,sList)  in ktest.case[10][1]:
+        add_cage(n,list(map(tuple2id,sList)))
+    return
+    
+    
 def change(event):
     global zz,boxList
     document["progress"].text=""
-    if len(boxList)==0:
-        boxList=[]
-        for (n,sList)  in ktest.case[10][1]:
-            add_cage(n,list(map(tuple2id,sList)))
-        return
+
     for s in gridDict.keys():
         b=gridDict[s]
         itm=document[b.id]
@@ -260,7 +250,9 @@ def change(event):
 
 
 def report(num):
-    document["progress"].text=str(num)
+    #document["progress"].text=str(num -81 )
+    document["progress"].style.width=str(int((581 - num) / 5  ))+"%"
+    
 
 def ongoing():
     global zz
