@@ -185,8 +185,14 @@ def solve():
     return zz
 
 
-def main(cc=13):
- #   kl.dbg=dbg
+def main():
+    
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t","--test", help="test number", type=int, default=10)
+    args = parser.parse_args()
+    cc=args.test
+    
     zz=kl.KillerSudoku(case[cc][0])
     zz.load           (case[cc][1])
     solution=zz.solve()
@@ -199,3 +205,5 @@ def main(cc=13):
     else:
         print("No Solution")
 
+if __name__ == '__main__':
+    main()
