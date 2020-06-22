@@ -78,7 +78,7 @@ def xxx():
     return puzzle
 
 def help(ev) :
-    txt="""    Click on cages to build cells, then click on number button to select 
+    txt="""    Click on cells to build cages, then click on number button to select 
     total for cage. When complete, press 'Solve'.
     Press 'Sample' for a sample puzzle. 
     For background see https://en.wikipedia.org/wiki/Killer_sudoku 
