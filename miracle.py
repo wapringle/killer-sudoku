@@ -2,7 +2,7 @@ import pprint,copy
 import kl
 
 def dbg(*kargs):
-    print(*kargs)
+#    print(*kargs)
     return
 
 def inrange(t):
@@ -29,7 +29,7 @@ class Miracle(kl.KillerSudoku):
     def remove_single_number(self,k,n):
         x,y=k
         sn={n}
-        cells=self.rows[y]|self.cols[x]|self.groups[self.grid(x,y)]|set(knightKingMove(k))
+        cells=self.rows[y]|self.cols[x]|self.grids[self.grid(x,y)]|set(knightKingMove(k))
         foundOne=False
         for c in cells:
             if k==c:
@@ -64,9 +64,29 @@ class Miracle(kl.KillerSudoku):
                 raise Exception("No Solution")
 
         return foundOne
+    
+    def remove_single_numbers(self):
+        """ Classic sudoku. Given a singleton, remove from intersecting lines and grids 
+        """
+        
+        foundOne=True
+        while foundOne:
+            foundOne=False
+            for k,v in self.board.items():
+                if len(v)==1:
+                    if k not in self.foundSofar:
+                        self.foundSofar |= {k}
+                        dbg("singleton found",k,v)
+                        foundOne=self.remove_single_number(k,v.pop())
+                        # repeat while singletons keep appearing
+                        
+        
+
+    
+    
     def checkLegal(self):
         values=set([p for p in self.boardSize])
-        for rcg in [self.rows,self.cols,self.groups]:
+        for rcg in [self.rows,self.cols,self.grids]:
             for x in self.boardSize:
                 target=copy.copy(values)
                 for a in rcg[x]:
@@ -77,25 +97,30 @@ class Miracle(kl.KillerSudoku):
                     dbg("checkLegal finds",rcg[x],target)
                     return False
         return True
+    
+    def populate(self,rc,n):
+        self.board[rc]={n}
+        
             
         
             
 zz=Miracle(9)
-zz.remove_single_number((5,3),1)
-zz.remove_single_number((6,7),2)
+""" Populate the grid with 2 numbers, the original puzzle """
 
-#zz.remove_single_number((3,5),3) 
-#zz.remove_single_number((9,1),4)
+zz.populate((5,3),1)
+zz.populate((6,7),2)
 
-zz.remove_single_number((3,6),3) 
-zz.remove_single_number((9,2),4)
+""" A little trial & error finds these 2 will produce a solution """
+
+zz.populate((3,6),3) 
+zz.populate((9,2),4)
 
 if not zz.checkLegal():
     i=1
 oldt=0
-for i in range(20):
+for i in range(30):
     zz.rule2()
-    zz.newRule3()
+    zz.rule3()
     zz.remove_single_numbers()
     zz.checkLegal()
     t=sum(map(len,zz.board.values()))
@@ -106,17 +131,15 @@ for i in range(20):
         break
     oldt=t
     
-"""BFI to get #3 """
-
-
-def magic(r,c):
-    if len(zz.board[(r,c)])==1:
-        return str(list(zz.board[(r,c)])[0])
-    else:
-        return "+"
-for r in zz.boardSize:
-    rw=" ".join([magic(r,c) for c in zz.boardSize])
-    print(rw)
+    
+    def magic(r,c):
+        if len(zz.board[(r,c)])==1:
+            return str(list(zz.board[(r,c)])[0])
+        else:
+            return "+"
+    for r in zz.boardSize:
+        rw=" ".join([magic(r,c) for c in zz.boardSize])
+        print(rw)
 
 
 #pprint.pprint(zz.board)
