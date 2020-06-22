@@ -1,4 +1,4 @@
-from browser import document, html
+from browser import document, html, alert
 from browser.html import *
 
 from sudoku_panel import on_mouse_enter, on_mouse_leave, on_grid_button_pressed, on_number_button_pressed, sample, change, initCell
@@ -77,13 +77,24 @@ def xxx():
     puzzle <= make_grid(grids)
     return puzzle
 
+def help(ev) :
+    txt="""    Click on cages to build cells, then click on number button to select 
+    total for cage. When complete, press 'Solve'.
+    Press 'Sample' for a sample puzzle. 
+    For background see https://en.wikipedia.org/wiki/Killer_sudoku 
+    """
+    alert(txt)
+
 
 def init():
     table = TABLE(Class='outer')
 
     table <= TR(TD(make_numbers(), colspan=3, Class="outer"))
 #    table <= TR(TD(HR(style={'width': '80%', 'height': '10px', 'background-color': 'black'}),colspan=2,Class="outer"))
-    table <= TR(TD(SPAN("KILLER SODUKO"), colspan=3, Class="outer"))
+    table <= TR(TD(
+          SPAN("KILLER SODUKO")
+        + SPAN("?", id="help",style={"background-color": "tomato", "border-style": "outset","margin-left": "50px", "cursor": "help"})
+        , colspan=3, Class="outer")) 
     table <= TR(TD(xxx(), colspan=3, Class="outer"))
     table <= TR(
         TD(
@@ -108,3 +119,4 @@ def init():
     progress = document["progress"]
     document["button1"].bind("click", change)
     document["button0"].bind("click", sample)
+    document["help"].bind("click",help)
