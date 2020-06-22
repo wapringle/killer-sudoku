@@ -142,8 +142,5 @@ for i in range(30):
         print(rw)
 
 
-#pprint.pprint(zz.board)
-i=1
-
             
         
