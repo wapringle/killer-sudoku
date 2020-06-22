@@ -199,8 +199,8 @@ def main():
     if solution:
         #import pprint
         #pprint.pprint(solution)
-        for r in zz.boardSize:
-            rw=" ".join([str(solution[(r,c)]) for c in zz.boardSize])
+        for r in zz.board_size:
+            rw=" ".join([str(solution[(r,c)]) for c in zz.board_size])
             print(rw)
     else:
         print("No Solution")
