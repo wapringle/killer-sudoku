@@ -10,12 +10,15 @@ Files
   - index.html - Contains stylesheet and lnk to brythoninterface.py
   - brythoninterface.py - script to build the webpage
   - sudoku_panel.py - script that reacts to the mousclicks etc and displays the result
-  - kl.py - pure python script that solves the puzzle, can also be run from the command line, see below. Makes extensive use of the python set operator
+  - kl.py - pure python script that solves the puzzle, can also be run from the command line, see below. 
   - jtest.js - javascript rewrite of critical python function as a speedup
   
 Extras
   - ktest.py - contains a number of sample puzzles that can be run from the command line
   
+Notes
+  - kl.py makes extensive use of the python 'set' operator
+  - kl.py makes a number of passes to solve the puzzle. After each pass it passes control to the webpage to update the numbers found. Otherwise the screen sits blank for 20 seconds or so until the puzzle is completely solved.
   
   
 
