@@ -4,7 +4,7 @@ import kl
 
 
 def dbg(*kargs):
-#    print(*kargs)
+    print(*kargs)
     return
 
 
@@ -103,15 +103,23 @@ class Miracle(kl.KillerSudoku):
 
 
 zz = Miracle(9)
-""" Populate the grid with 2 numbers, the original puzzle """
 
-zz.populate((5, 3), 1)
-zz.populate((6, 7), 2)
+if False:
+    """ Populate the grid with 2 numbers, the original puzzle """
+    
+    zz.populate((5, 3), 1)
+    zz.populate((6, 7), 2)
+    
+    """ A little trial & error finds these 2 will produce a solution """
+    
+    zz.populate((3, 6), 3)
+    zz.populate((9, 2), 4)
+else:
+    zz.populate((3, 5), 4)
+    zz.populate((4, 3), 3)
 
-""" A little trial & error finds these 2 will produce a solution """
-
-zz.populate((3, 6), 3)
-zz.populate((9, 2), 4)
+    zz.populate((4, 1), 4)
+    
 
 if not zz.check_legal():
     i = 1
@@ -137,6 +145,8 @@ for i in range(30):
     for r in zz.board_size:
         rw = " ".join([magic(r, c) for c in zz.board_size])
         print(rw)
+        
+i=1
 
 
 
