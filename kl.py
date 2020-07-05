@@ -207,7 +207,7 @@ class KillerSudoku:
 
                 if rcg != 4 and x < max(self.board_size):
                     """ Check adjacent rows & columns """
-                    (tot, b) = self.collect(lambda p: p[rcg].isdisjoint({x, x + 1}))  # check overflows
+                    (tot, b) = self.collect(lambda p: not p[rcg].isdisjoint({x, x + 1}))  # check overflows
                     target = list(b - (full[x] | full[x + 1]))
                     if len(target) < lmt:
                         yield tot - 2 * self.line_total, target
