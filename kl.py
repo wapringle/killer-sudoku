@@ -29,7 +29,7 @@ import pprint
 
 
 def dbg(*kargs):
-#    print(*kargs)
+    #print(*kargs)
     return
 
 
@@ -203,7 +203,7 @@ class KillerSudoku:
             for x in self.board_size:
                 tot, b = self.collect(lambda p: p[rcg] == {x})  # fully enclosed cages
                 target = list(full[x] - b)
-                if len(target) > 0 and tot < self.line_total:
+                if len(target) > 0 and 0 < tot < self.line_total:
                     yield((self.line_total - tot, target))
 
     def getOuters(self):
@@ -359,7 +359,7 @@ class KillerSudoku:
         #
         return True
 
-    def rule3(self):
+    def rule3(self,tt=False):
     #
     # Rule 3 states that if a row, column or grid contains 2 squares with the same options
     # then these options can be eliminated from other squares in the group.
@@ -383,13 +383,34 @@ class KillerSudoku:
                             dbg("Rule 3 removes", i, sbi - s)
                             removed += 1
             return removed
+        if tt:
+            purge(self.rows[3])  
 
         ret = 0
         for x in self.board_size:
             ret += purge(self.rows[x])  # select rows
-            ret += purge(self.cols[x])  # select cols
+            ret += purge(self.cols[x]) # select cols
             ret += purge(self.grids[x])  # select grids
         return ret == 0
+    
+    def rule4(self):
+        """
+        Rule 4 states that 
+        1/ if a cage is entirely within a row, column or group (rcg)
+        2/ and the count of number options within the cage == the size of the cage
+        3/ then these number options can be removed from the enclosing rcg 
+        """
+        for rcg, full in [(3, self.rows), (2, self.cols), (4, self.grids)]:  # numbers correspond to position in cage tuple
+            for x in self.board_size:
+                for itm in filter(lambda p: p[rcg] == {x}, self.cage_list): # fully enclosed cages
+                    # collect options
+                    squares=itm[1]
+                    options=set()
+                    for s in squares:
+                        options += self.board[s]
+                    if len(options) == len(squares): # rule is triggered
+                        pass
+                    
 
     def solve(self):
         oldt = 0
@@ -403,6 +424,16 @@ class KillerSudoku:
             if t == target:
                 return self.get_solution()
         return None
+
+    def solve2(self):
+        oldt = 0
+        # pprint.pprint(self.inners)
+        # pprint.pprint(self.outers)
+        target = max(self.board_size) ** 2
+        for i in range(40):
+             yield self.iteration()
+
+        yield None
 
     def iteration(self):
         """ Repeat this loop until solution emerges. 
@@ -430,6 +461,7 @@ class KillerSudoku:
         print(t, self.turbo)
         if self.oldt == t:
             if self.turbo:
+                self.rule3(True)
                 return 0  # failed
             else:
                 # beef up search path if we have run into the sand

@@ -1,4 +1,6 @@
 import kl
+import copy
+
 
 
 case={
@@ -195,12 +197,35 @@ case={
  ( 3 , [(9, 1), (9, 2)] ),
  ( 19 , [(8, 3), (8, 4), (9, 3), (9, 4)] ),
  ( 24 , [(9, 5), (9, 6), (9, 7), (9, 8)] ),
-])
+]),
+15: (9, [ ( 28 , [(1, 1), (1, 2), (2, 1), (2, 2)] ),
+ ( 7 , [(1, 3), (2, 3)] ),
+ ( 25 , [(1, 4), (1, 5), (1, 6), (2, 4), (2, 6)] ),
+ ( 15 , [(1, 7), (2, 7)] ),
+ ( 11 , [(1, 8), (1, 9), (2, 8), (2, 9)] ),
+ ( 15 , [(2, 5), (3, 5), (4, 5)] ),
+ ( 15 , [(3, 3), (3, 4), (4, 3), (4, 4)] ),
+ ( 26 , [(3, 6), (3, 7), (4, 6), (4, 7)] ),
+ ( 15 , [(3, 8), (3, 9), (4, 9)] ),
+ ( 10 , [(4, 8), (5, 7), (5, 8)] ),
+ ( 18 , [(3, 1), (3, 2), (4, 1)] ),
+ ( 17 , [(4, 2), (5, 2), (5, 3)] ),
+ ( 6 , [(5, 1), (6, 1), (6, 2)] ),
+ ( 37 , [(5, 4), (5, 5), (5, 6), (6, 5), (7, 5), (8, 5)] ),
+ ( 18 , [(6, 6), (6, 7), (7, 6), (7, 7), (7, 8)] ),
+ ( 27 , [(6, 3), (6, 4), (7, 2), (7, 3), (7, 4)] ),
+ ( 26 , [(7, 1), (8, 1), (8, 2), (9, 1)] ),
+ ( 20 , [(5, 9), (6, 8), (6, 9)] ),
+ ( 28 , [(7, 9), (8, 8), (8, 9), (9, 9)] ),
+ ( 14 , [(8, 6), (8, 7), (9, 7), (9, 8)] ),
+ ( 10 , [(8, 3), (8, 4), (9, 2), (9, 3)] ),
+ ( 17 , [(9, 4), (9, 5), (9, 6)] ), 
+]),
 }
 
 
 
-caseno=13
+caseno=15
 
 
 def dbg(*kargs):
@@ -218,21 +243,61 @@ def main():
     
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t","--test", help="test number", type=int, default=14)
+    parser.add_argument("-t","--test", help="test number", type=int, default=15)
     args = parser.parse_args()
     cc=args.test
     
     zz=kl.KillerSudoku(case[cc][0])
-    zz.load           (case[cc][1])
-    solution=zz.solve()
+    try:
+        zz.load(case[cc][1])
+    except Exception as e:
+        print(e.args)
+        return 1
+    
+    solution=doit(zz)
     if solution:
         #import pprint
         #pprint.pprint(solution)
         for r in zz.board_size:
             rw=" ".join([str(solution[(r,c)]) for c in zz.board_size])
             print(rw)
-    else:
-        print("No Solution")
+        return 0
+
+
+def doit(zz):
+    target = max(zz.board_size) ** 2
+    try:
+        generator=zz.solve2()
+        t=True
+        while t:
+            t=next(generator)
+            if t==target:
+                return zz.get_solution()
+        raise Exception("No solution")
+
+    except Exception as e:
+        """ try heuristics """
+
+        doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==2 ]
+        for s,tt in doubles:
+            for v in tt:
+                qq=copy.deepcopy(zz)
+                print("Try setting",s,"to",v)
+                qq.board[s]={v}
+                try:
+                    generator=qq.solve2()
+                    t=True
+                    while t:
+                        t=next(generator)
+                        if t==target:
+                            return qq.get_solution()
+                except Exception as e:
+                    # raised by fatal error
+                    # this one didn't work, so other must be right
+                    zz.board[s]=tt - {v}
+        # come to end, still no solution
+        return None
+    
 
 if __name__ == '__main__':
     main()

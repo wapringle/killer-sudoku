@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import copy
 from  browser import document, timer, alert
 
 import kl,ktest
@@ -239,13 +240,13 @@ def sample(ev):
     global zz,boxList
     document["button1"].textContent = "Solve"
     boxList=[]
-    for (n,sList)  in ktest.case[10][1]:
+    for (n,sList)  in ktest.case[15][1]:
         add_cage(n,list(map(tuple2id,sList)))
     return
     
     
 def change(event):
-    global zz,boxList
+    global zz,qq,boxList,generator,doubles
     document["progress"].text=""
 
     for s in gridDict.keys():
@@ -255,12 +256,15 @@ def change(event):
     
     document["button1"].textContent = "thinking"
     zz=kl.KillerSudoku(boardSize)
+    qq=None
     try:
         if True:
             for (n,idList) in boxList:
                 print ( "(",n,",",list(map(id2tuple,idList)),"),")
             zz.load([ (n,list(map(id2tuple,idList)))  for (n,idList) in boxList])
             #zz.solve()
+            generator=zz.solve2()
+            doubles=None
         else:
             zz=ktest.solve()
     except Exception as e:
@@ -278,28 +282,60 @@ def report(num):
     
 
 def ongoing():
-    global zz
-    try:
-        t=zz.iteration()
-    except Exception as e:
-        document["button1"].textContent = "failed"
-        alert("No Solution" )
-        return    
-    report(t)
-    if t!=boardSize ** 2 and t!=0:
-        for k,v in zz.board.items():
-            if len(v)==1:
-                id=tuple2id(k)
-                document[id].text=str(list(v)[0])
+    global zz,bsave,generator,doubles
 
-        timer.set_timeout(ongoing,0)
-    else:
+    try:
+        t=next(generator)
         if t==0:
-            document["button1"].textContent = "failed"
-            alert("can't find solution")
+            raise Exception("Failed to find solution")
+        report(t)
+        if t!=boardSize ** 2 and t!=0:
+            for k,v in zz.board.items():
+                if len(v)==1:
+                    id=tuple2id(k)
+                    document[id].text=str(list(v)[0])
+    
+            timer.set_timeout(ongoing,0)
         else:
             show_solution(zz.get_solution())
-        document["button1"].textContent = "done"
+            document["button1"].textContent = "done"
+
+    except Exception as e:
+        def yy(l):
+            for s,v in l:
+                i=0
+                for vv in v: #reversed( [ x for x in v]):
+                    yield (s,vv,i)
+                    i+=1
+                
+            
+        if not doubles:
+            doubles=yy( (s,v) for (s,v) in zz.board.items() if len(v)==2 )
+            document["button1"].textContent = "Heuristic"
+            bsave=copy.deepcopy(zz.board)
+            
+        try:
+            (s,v,i)=next(doubles)
+            if i==1 and e.args==("Failed to find solution",):
+                #skip this one
+                (s,v,i)=next(doubles)
+                
+            zz.board=copy.deepcopy(bsave)
+            #zz.turbo=False
+            print("copied")
+
+            print("Try setting",s,"from",zz.board[s],"to",v)
+            zz.board[s]={v}
+            zz.last_inner={}
+            zz.last_outer={}
+            generator=zz.solve2()
+            timer.set_timeout(ongoing,0)
+            return
+            
+        except StopIteration:
+            document["button1"].textContent = "failed"
+            alert("No Solution" )
+            return    
     
 
 
