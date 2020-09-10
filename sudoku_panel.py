@@ -247,14 +247,6 @@ def sample(ev):
     
 def change(event):
     global zz,qq,boxList,generator,doubles
-    document["progress"].text=""
-
-    for s in gridDict.keys():
-        b=gridDict[s]
-        itm=document[b.id]
-        itm.text=""
-    
-    document["button1"].textContent = "thinking"
     zz=kl.KillerSudoku(boardSize)
     qq=None
     try:
@@ -271,6 +263,14 @@ def change(event):
         alert(" ".join(map(str,e.args)) )
         return
     
+    document["progress"].text=""
+
+    for s in gridDict.keys():
+        b=gridDict[s]
+        itm=document[b.id]
+        itm.text=""
+    
+    document["button1"].textContent = "thinking"
     
     timer.set_timeout(ongoing,0)
 
