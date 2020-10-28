@@ -22,8 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from browser import document, html, alert
+from browser import document, html, alert,bind
 from browser.html import *
+from browser.widgets.dialog import InfoDialog
 
 from sudoku_panel import on_mouse_enter, on_mouse_leave, on_grid_button_pressed, on_number_button_pressed, sample, change, initCell
 
@@ -101,13 +102,6 @@ def xxx():
     puzzle <= make_grid(grids)
     return puzzle
 
-def help(ev) :
-    txt="""    Click on cells to build cages, then click on number button to select 
-    total for cage. When complete, press 'Solve'.
-    Press 'Sample' for a sample puzzle. 
-    For background see https://en.wikipedia.org/wiki/Killer_sudoku 
-    """
-    alert(txt)
 
 
 def init():
@@ -143,4 +137,15 @@ def init():
     progress = document["progress"]
     document["button1"].bind("click", change)
     document["button0"].bind("click", sample)
-    document["help"].bind("click",help)
+
+    @bind(document["help"],"click")
+    def help(ev) :
+        txt="""Click on cells to build cages, then click on number button to select 
+        total for cage.<p>When complete, press 'Solve'.
+        <p>
+        Press 'Sample' for a sample puzzle. 
+        <p>
+        For background see https://en.wikipedia.org/wiki/Killer_sudoku 
+        """
+        InfoDialog("Help",txt,ok=True)
+
