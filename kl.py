@@ -26,13 +26,38 @@ import os
 import copy
 import math
 import pprint
+from functools import partial
+from itertools import permutations,product,combinations
+
+# exception classes
+class Error(Exception):
+    """Base class for ConfigParser exceptions."""
+
+    def __init__(self, msg=''):
+        self.message = msg
+        Exception.__init__(self, msg)
+
+    def __repr__(self):
+        return self.message
+
+    __str__ = __repr__
 
 
+""" this is balls-achingly slow in brython """
+def newGetSubtotals(total,inputs,use_exclude):
+    ll=zip(*filter(lambda x:sum(x)==total and  (len(set(x))==len(x) or not use_exclude),product(*inputs)))
+    return list(map(set,ll))
+
+debug=False
 def dbg(*kargs):
-    #print(*kargs)
+    global debug
+    if debug: print(*kargs)
     return
 
-
+def singleton_found(k,v):
+    print("singleton found", k, list(v)[0])
+    return
+    
 def report(*kargs):
     dbg(*kargs)
     return
@@ -134,6 +159,7 @@ class KillerSudoku:
                 self.board[(r, c)] = copy.copy(values)
         self.last_inner = {}
         self.last_outer = {}
+        self.limit=3 # for squeeze, start off with quick scan for speed, go deeper if needed.
         self.found_sofar = set()
         """Helpers"""
         for x in self.board_size:
@@ -171,17 +197,17 @@ class KillerSudoku:
                 test_box -= s
             else:
                 err = (test_box & s) ^ s
-                raise Exception("Duplicate", box_count, err)
+                raise Error(f'Duplicate {box_count} {err}')
 
             self.cage_list.append((box_count, cage, rows, cols, grids))
 
         if len(test_box) != 0:
-            raise Exception("Missing", test_box)
+            raise Error(f'Missing {test_box}')
 
         if boxTotal != self.line_total * max(self.board_size):
-            raise Exception("Incorrect total", boxTotal - 405)
-        self.inners = list(self.getInners())
-        self.outers = list(self.getOuters())
+            raise Error(f'Incorrect total {boxTotal - self.line_total * max(self.board_size)}')
+        self.inners = sorted(self.getInners())
+        self.outers = sorted(self.getOuters())
         self.oldt = 0
         return
 
@@ -270,14 +296,19 @@ class KillerSudoku:
     def squeeze(self, n, cage, use_exclude=True):
         """ remove candidate numbers from squares if they cant be used to for totals that a cage contributes to 
         """
-        limit = 6 if self.turbo else 3  # start off with quick scan for speed, go deeper if needed.
+        limit = self.limit
         if len([s for s in cage if len(s) > 1]) > limit:
             # if not self.turbo:
                 dbg("reject ", cage)
                 return None
-        ll = [list(l) for l in list(map(self.board.get, cage))]
-        solutions = getSubTotals(n, ll, [], use_exclude, [])
-        ll = list(map(set, zip(*solutions)))
+        l0 = [list(l) for l in list(map(self.board.get, cage))]
+        if True:
+            solutions = getSubTotals(n, l0, [], use_exclude, [])
+            ll = list(map(set, zip(*solutions)))
+        else:
+            ## too slow
+            ll=newGetSubtotals(n,l0,use_exclude)
+            
         i = 0
         for s in ll:
 
@@ -285,6 +316,9 @@ class KillerSudoku:
             after = before & set(s)
             if after < before:
                 dbg("Squeeze", cage[i], "from", before, "by", set(s), "to", after)
+                if len(after)==1:
+                    self.singleton_found(cage[i],copy.deepcopy(after))
+                    pass
                 zz = 1
 
             self.board[cage[i]] &= set(s)
@@ -312,7 +346,7 @@ class KillerSudoku:
                         # We've eliminated all possibles, Oops.
                         #
                         print("fatal %d %d" % (x, y))
-                        raise Exception("No Solution")
+                        raise Error("No Solution")
             return foundMore
 
         foundOne = True
@@ -321,11 +355,15 @@ class KillerSudoku:
             for k, v in self.board.items():
                 if len(v) == 1:
                     if k not in self.found_sofar:
-                        self.found_sofar |= {k}
-                        dbg("singleton found", k, v)
-                        foundOne = removeSingleNumber(k, v.pop())
+                        self.singleton_found(k,v)
+                    foundOne = removeSingleNumber(k, v.pop())
                         # repeat while singletons keep appearing
 
+    def singleton_found(self,k,v):
+        if k not in self.found_sofar:
+            self.found_sofar |= {k}
+            singleton_found(k,v)
+    
     def rule2(self):
         #
         # Rule 2 states that a value must go somewhere, ie each row, column and grid
@@ -352,6 +390,8 @@ class KillerSudoku:
                         if target != set():
                             dbg("Rule 2 finds", (x, y), target)
                             self.board[(x, y)] = target
+                            if len(target)==1:
+                                self.singleton_found((x,y),target)
                             break
 
         #
@@ -467,6 +507,7 @@ class KillerSudoku:
                 # beef up search path if we have run into the sand
                 # The first few iterations have seriously cleaned up the options
                 # so we can go deeper
+                self.limit += 3
                 self.last_inner = {}
                 self.last_outer = {}
                 self.turbo = True
@@ -475,6 +516,5 @@ class KillerSudoku:
 
     def get_solution(self):
         return dict([(k, v.pop()) for k, v in self.board.items()])
-
 
 
