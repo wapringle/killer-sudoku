@@ -4,10 +4,10 @@
 <head>
     <meta charset="utf-8">
     <script type="text/javascript"
-        src="https://cdn.jsdelivr.net/npm/brython@3.8.10/brython.min.js">
+        src="https://cdn.jsdelivr.net/npm/brython@3.9.0/brython.min.js">
     </script> 
     <script type="text/javascript"
-        src="https://cdn.jsdelivr.net/npm/brython@3.8.10/brython_stdlib.js">
+        src="https://cdn.jsdelivr.net/npm/brython@3.9.0/brython_stdlib.js">
     </script> 
 <style>
 
@@ -74,12 +74,14 @@ td { border: solid thin; height: 1.8em; width: 1.8em; text-align: center; paddin
 </head>
 
 <body onload="brython()">
-<script type="text/javascript" src="jtest.js"> </script>
+<script type="text/javascript"  class="webworker" id="myworker" src="jtest.js"> </script>
 <!--
 <script type="text/python" src="ktest.py"> </script>
 -->
 <script type="text/python" src="brythonInterface.py"> </script>
 
+<script type="text/python" class="webworker" id="myworker" src="worker.py">
+</script>
 
 <script type="text/python">
 from browser import window

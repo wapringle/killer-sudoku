@@ -306,15 +306,7 @@ def main():
         print(e.args)
         return 1
     
-    target=81
-    for t in kl.doit(zz):
-        if not isinstance(t,int):
-            break
-        
-    
-        
-        
-    solution=t
+    solution=kl.doit(zz)
     if solution:
         #import pprint
         #pprint.pprint(solution)

@@ -24,7 +24,6 @@ SOFTWARE.
 import copy
 from  browser import document, timer, alert
 
-import kl,ktest
 #from brythonInterface import boardSize
 
 boardSize=9
@@ -240,12 +239,12 @@ def sample(ev):
     global zz,boxList
     document["button1"].textContent = "Solve"
     boxList=[]
-    for (n,sList)  in ktest.case[15][1]:
+    for (n,sList)  in ktest.case[13][1]:
         add_cage(n,list(map(tuple2id,sList)))
     return
     
-    
-def change(event):
+"""
+def xchange(event):
     global zz,qq,boxList,generator,doubles
     zz=kl.KillerSudoku(boardSize)
     qq=None
@@ -274,6 +273,7 @@ def change(event):
     
     timer.set_timeout(ongoing,0)
 
+"""    
 
 
 def report(num):
@@ -338,4 +338,33 @@ def ongoing():
             return    
     
 
+        
+from browser import bind, worker, window
 
+# Create a web worker, identified by a script id in this page.
+myWorker = worker.Worker("myworker")
+
+def change(evt):
+    """Called when the value in one of the input fields changes."""
+    window.testme()
+    # Send a message (here a list of values) to the worker
+    myWorker.send([ (n,list(map(id2tuple,idList)))  for (n,idList) in boxList])
+    
+    document["progress"].text=""
+
+    for s in gridDict.keys():
+        b=gridDict[s]
+        itm=document[b.id]
+        itm.text=""
+    
+    document["button1"].textContent = "thinking"
+    
+
+@bind(myWorker, "message")
+def onmessage(e):
+    """Handles the messages sent by the worker."""
+    print(e.data)
+    l=e.data
+    if l[0]==0:
+        document[tuple2id(tuple(l[1]))].text=str(l[2])
+    

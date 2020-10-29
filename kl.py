@@ -55,7 +55,7 @@ def dbg(*kargs):
     return
 
 def singleton_found(k,v):
-    #print("singleton found", k, list(v)[0])
+    print("singleton found", k, list(v)[0])
     return
     
 def report(*kargs):
@@ -76,6 +76,7 @@ def getSubTotals(target, num_list_list, sofar, use_exclude, exclude):
     Used to eliminate candidates in numListList that cant be used to get target.
     The web version replaces this with its js equivalent as it is a bit faster.
     """
+    #print(target)
     if num_list_list == []:
         if target == 0:
             sofar.append(exclude)
@@ -141,7 +142,7 @@ class KillerSudoku:
         gy = (y - 1) // self.grid_size
         return self.grid_size * gx + gy + 1
 
-    def __init__(self, boardSize):
+    def __init__(self, boardSize,report_singleton=singleton_found):
         """Constructor"""
         #
         # each row,column and grid has a set of possible values. As a value is
@@ -149,6 +150,7 @@ class KillerSudoku:
         # First create these sets of possibles.
         #
         self.grid_size = int(math.sqrt(boardSize))
+        self.report_singleton=report_singleton
         # this is the grid size, eq for a 9 x 9 puselfle the grid size is 3
         self.board = {}  # possibles per square
         self.board_size = range(1, boardSize + 1)
@@ -362,7 +364,7 @@ class KillerSudoku:
     def singleton_found(self,k,v):
         if k not in self.found_sofar:
             self.found_sofar |= {k}
-            singleton_found(k,v)
+            self.report_singleton(k,v)
     
     def rule2(self):
         #
@@ -489,6 +491,7 @@ class KillerSudoku:
             for i, (n, cage) in enumerate(io):
                     r = lastone.get(i, {99})
                     if r:
+                        #print(cage)
                         for a, b in zip(r, map(self.board.get, cage)):
                             if a != b:
                                 lastone[i] = self.squeeze(n, cage, unique)
@@ -525,11 +528,9 @@ class KillerSudoku:
 
 
 def doit(zz):
-    for t in zz.solve2():
-        if t==81:
-            yield zz.get_solution()
-        elif t:
-            yield t
+    t=zz.solve()
+    if t:
+        return t
 
     """ try heuristics """
 
@@ -544,20 +545,27 @@ def doit(zz):
             break
         
         old_doubles=doubles
+
+        x=zz.board_size
+        zz.board_size=None
         qq=copy.deepcopy(zz)
+        qq.board_size=x
+        zz.board_size=x
+
         for s,t in doubles:
             for v in t:
-                zz=copy.deepcopy(qq)
                 print("Try setting",s,"to",v)
                 zz.board[s]={v}
                 try:
-                    for tt in zz.solve2():
-                        if tt==81:
-                            yield zz.get_solution()
-                        elif tt:
-                            yield tt
+                    tt=zz.solve()
+                    if tt:
+                        return tt
+                    """
+                    if s==(1,3) and v==9:
+                        raise EOFError
+                        """
                     
-                except Exception as e:
+                except Error as e:
                     if e.message=="No Solution":
                         # raised by fatal error
                         # this one didn't work, so other must be right
@@ -566,6 +574,18 @@ def doit(zz):
                         pass
                     else:
                         raise
+
+                if False:
+                    qq.board_size=None
+                    zz=copy.deepcopy(qq)
+                    qq.board_size=x
+                    zz.board_size=x
+                else:
+                    zz.board=copy.deepcopy(qq.board)
+                    zz.last_inner=copy.deepcopy(qq.last_inner)
+                    zz.last_outer=copy.deepcopy(qq.last_outer)
+                    zz.found_sofar=copy.deepcopy(qq.found_sofar)
+                
                 
         zz.iteration()
     zz.limit +=3
