@@ -306,7 +306,15 @@ def main():
         print(e.args)
         return 1
     
-    solution=doit(zz)
+    target=81
+    for t in kl.doit(zz):
+        if not isinstance(t,int):
+            break
+        
+    
+        
+        
+    solution=t
     if solution:
         #import pprint
         #pprint.pprint(solution)
@@ -316,52 +324,6 @@ def main():
         return 0
 
 
-def doit(zz):
-    ret = zz.solve()
-    if ret:
-        return ret
-
-    """ try heuristics """
-
-    old_doubles=[]
-    target = max(zz.board_size) ** 2
-    
-    while True:
-
-        doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==2 ]
-        print(doubles)
-        if doubles == old_doubles:
-            break
-        
-        old_doubles=doubles
-        
-        for s,t in doubles:
-            for v in t:
-                qq=copy.deepcopy(zz)
-                print("Try setting",s,"to",v)
-                qq.board[s]={v}
-                try:
-                    ret = qq.solve()
-                    if ret:
-                        return ret
-                except Exception as e:
-                    if e.message=="No Solution":
-                        # raised by fatal error
-                        # this one didn't work, so other must be right
-                        print("Setting",s,"to",t-{v})
-                        zz.board[s]=t - {v}
-                        pass
-                    else:
-                        raise
-                
-        zz.iteration()
-    zz.limit +=3
-    if zz.limit < 12:
-        print("increasing limit to",zz.limit)
-        return doit(zz)
-    else:
-        return None
-    
     
 
 if __name__ == '__main__':
