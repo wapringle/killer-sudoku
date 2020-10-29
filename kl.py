@@ -55,7 +55,7 @@ def dbg(*kargs):
     return
 
 def singleton_found(k,v):
-    print("singleton found", k, list(v)[0])
+    #print("singleton found", k, list(v)[0])
     return
     
 def report(*kargs):
@@ -471,7 +471,11 @@ class KillerSudoku:
         # pprint.pprint(self.outers)
         target = max(self.board_size) ** 2
         for i in range(40):
-             yield self.iteration()
+            t= self.iteration()
+            if t==0:
+               break 
+            yield t
+                
 
         yield None
 
@@ -515,6 +519,59 @@ class KillerSudoku:
         return t
 
     def get_solution(self):
+        for k, v in self.board.items():
+            assert len(v) ==1
         return dict([(k, v.pop()) for k, v in self.board.items()])
 
 
+def doit(zz):
+    for t in zz.solve2():
+        if t==81:
+            yield zz.get_solution()
+        elif t:
+            yield t
+
+    """ try heuristics """
+
+    old_doubles=[]
+    target = max(zz.board_size) ** 2
+    
+    while True:
+
+        doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==2 ]
+        print(doubles)
+        if doubles == old_doubles:
+            break
+        
+        old_doubles=doubles
+        qq=copy.deepcopy(zz)
+        for s,t in doubles:
+            for v in t:
+                zz=copy.deepcopy(qq)
+                print("Try setting",s,"to",v)
+                zz.board[s]={v}
+                try:
+                    for tt in zz.solve2():
+                        if tt==81:
+                            yield zz.get_solution()
+                        elif tt:
+                            yield tt
+                    
+                except Exception as e:
+                    if e.message=="No Solution":
+                        # raised by fatal error
+                        # this one didn't work, so other must be right
+                        print("Setting",s,"to",t-{v})
+                        qq.board[s]=t - {v}
+                        pass
+                    else:
+                        raise
+                
+        zz.iteration()
+    zz.limit +=3
+    if zz.limit < 12:
+        print("increasing limit to",zz.limit)
+        return doit(zz)
+    else:
+        return None
+    
