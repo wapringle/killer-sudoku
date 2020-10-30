@@ -55,7 +55,7 @@ def dbg(*kargs):
     return
 
 def singleton_found(k,v):
-    print("singleton found", k, list(v)[0])
+    #print("singleton found", k, list(v)[0])
     return
     
 def report(*kargs):
@@ -77,12 +77,16 @@ def getSubTotals(target, num_list_list, sofar, use_exclude, exclude):
     The web version replaces this with its js equivalent as it is a bit faster.
     """
     #print(target)
+    if target < 0:
+        return sofar
     if num_list_list == []:
         if target == 0:
             sofar.append(exclude)
 
     else:
         for y in num_list_list[0]:
+            if target < y:
+                break
             if not use_exclude or y not in exclude:
                 getSubTotals(target - y, num_list_list[1:], sofar, use_exclude, exclude + [y])
     return sofar
@@ -303,7 +307,7 @@ class KillerSudoku:
             # if not self.turbo:
                 dbg("reject ", cage)
                 return None
-        l0 = [list(l) for l in list(map(self.board.get, cage))]
+        l0 = [sorted(l) for l in map(self.board.get, cage)]
         if True:
             solutions = getSubTotals(n, l0, [], use_exclude, [])
             ll = list(map(set, zip(*solutions)))
@@ -334,7 +338,7 @@ class KillerSudoku:
         def removeSingleNumber(k, n):
             x, y = k
             sn = {n}
-            cells = self.rows[y] | self.cols[x] | self.grids[self.grid(x, y)]
+            cells = self.rows[y] | self.cols[x] | self.grids[self.grid(x, y)]  | set([ p[1] for p in self.cage_list if k in p[1]][0])
             foundMore = False
             for c in cells:
                 if k == c:
