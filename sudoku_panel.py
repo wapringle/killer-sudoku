@@ -23,8 +23,7 @@ SOFTWARE.
 """
 import copy
 from  browser import document, timer, alert
-
-import kl,ktest
+import kl
 #from brythonInterface import boardSize
 
 boardSize=9
@@ -235,30 +234,24 @@ def show_solution(solution):
 
 
 import ktest
-
+testcase=18 
 def sample(ev):
-    global zz,boxList
+    global zz,boxList,testcase
     document["button1"].textContent = "Solve"
     boxList=[]
-    for (n,sList)  in ktest.case[15][1]:
+    for (n,sList)  in ktest.case[testcase][1]:
         add_cage(n,list(map(tuple2id,sList)))
     return
     
-    
+
 def change(event):
     global zz,qq,boxList,generator,doubles
     zz=kl.KillerSudoku(boardSize)
-    qq=None
     try:
-        if True:
-            for (n,idList) in boxList:
-                print ( "(",n,",",list(map(id2tuple,idList)),"),")
-            zz.load([ (n,list(map(id2tuple,idList)))  for (n,idList) in boxList])
-            #zz.solve()
-            generator=zz.solve2()
-            doubles=None
-        else:
-            zz=ktest.solve()
+        for (n,idList) in boxList:
+            print ( "(",n,",",list(map(id2tuple,idList)),"),")
+        zz.load([ (n,list(map(id2tuple,idList)))  for (n,idList) in boxList])
+        generator=kl.doit(zz)
     except Exception as e:
         alert(" ".join(map(str,e.args)) )
         return
@@ -274,6 +267,7 @@ def change(event):
     
     timer.set_timeout(ongoing,0)
 
+    
 
 
 def report(num):
@@ -282,14 +276,14 @@ def report(num):
     
 
 def ongoing():
-    global zz,bsave,generator,doubles
+    global zz,bsave,generator
 
     try:
         t=next(generator)
         if t==0:
             raise Exception("Failed to find solution")
         report(t)
-        if t!=boardSize ** 2 and t!=0:
+        if t!=boardSize ** 2:
             for k,v in zz.board.items():
                 if len(v)==1:
                     id=tuple2id(k)
@@ -297,10 +291,22 @@ def ongoing():
     
             timer.set_timeout(ongoing,0)
         else:
+            print("done")
             show_solution(zz.get_solution())
             document["button1"].textContent = "done"
 
+    except StopIteration:
+        print("done")
+        show_solution(zz.get_solution())
+        document["button1"].textContent = "done"
+        pass
     except Exception as e:
+        print(e)
+        raise
+        
+        
+def junk():
+    
         def yy(l):
             for s,v in l:
                 i=0
@@ -338,4 +344,33 @@ def ongoing():
             return    
     
 
+"""
+from browser import bind, worker, window
 
+# Create a web worker, identified by a script id in this page.
+myWorker = worker.Worker("myworker")
+
+def change(evt):
+    #Called when the value in one of the input fields changes.
+    # Send a message (here a list of values) to the worker
+    myWorker.send([ (n,list(map(id2tuple,idList)))  for (n,idList) in boxList])
+    
+    document["progress"].text=""
+
+    for s in gridDict.keys():
+        b=gridDict[s]
+        itm=document[b.id]
+        itm.text=""
+    
+    document["button1"].textContent = "thinking"
+    
+
+@bind(myWorker, "message")
+def onmessage(e):
+    #Handles the messages sent by the worker.
+    print(e.data)
+    l=e.data
+    if l[0]==0:
+        document[tuple2id(tuple(l[1]))].text=str(l[2])
+        
+        """        

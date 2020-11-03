@@ -20,6 +20,7 @@ function getSubTotals(target,numListList,sofar,use_exclude,exclude) {
     } else {
         for(var j=0;j<numListList[0].length;j++) {
             var y=numListList[0][j];
+            if(y>target) return s2;
             if(!(use_exclude && inx(y,exclude))) {
                 var v=target-y;
                 if(v>=0)
