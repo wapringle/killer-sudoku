@@ -157,7 +157,7 @@ class KillerSudoku:
         self.report_singleton=report_singleton
         # this is the grid size, eq for a 9 x 9 puselfle the grid size is 3
         self.board = {}  # possibles per square
-        self.board_size = range(1, boardSize + 1)
+        self.board_size = list(range(1, boardSize + 1))
         self.line_total = boardSize * (boardSize + 1) // 2
         values = set([p for p in self.board_size])
         for r in self.board_size:
@@ -546,28 +546,32 @@ def doit(zz):
     old_doubles=[]
     
     while True:
-
+        """
+        Find squares with doubles(or triples) that we can attempt trial solutions in sequence.
+        If we hit an impossible solution, that trial MUST be wrang, also any singletons found
+        as a result that trial mut also be wrong
+        """
         doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==2 ]
         if doubles == []:
+            # no doubles, so go for triples
             doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==3 ]
+        
         if doubles == old_doubles:
+            # all options on this pass exhausted
             break
         
         print(doubles)
         old_doubles=doubles
 
-        x=zz.board_size
-        zz.board_size=None
         qq=copy.deepcopy(zz)
-        qq.board_size=x
-        zz.board_size=x
-        #dz=dict(doubles)
+        dz=dict((k,copy.deepcopy(v)) for k,v in doubles )
+        """
         dz={}
         for k,v in doubles:
             dz[k]=copy.deepcopy(v)
-        #print(dz)
-        for s,tt in dz.items():
-            #print(s,tt)
+
+        """
+        for i,(s,tt) in enumerate(dz.items()):
             for v in tt:
                 print("Try setting",s,"to",v)
                 zz.board[s]={v}
@@ -585,31 +589,21 @@ def doit(zz):
                         # this one didn't work, so other must be right
                         qq.board[s]=qq.board[s] - {v}
                         print("Setting",s,"to",qq.board[s])
-                        for k,vv in dz.items():
+                        for k,vv in list(dz.items())[i+1:]:
                             if len(zz.board[k])==1:
                                 dz[k] = vv - zz.board[k]
                                 print(f"accelerate {k} from {qq.board[k]} to {dz[k]}" )
-                                #qq.board[k]=dz[k]
-                                
-                        qq.solve()
-                    
-                        """
-                        for t in qq.solve2():
-                            if t==target:
-                                return t
-                            if t==0:
-                                break
-                        pass
-                        """
                         
+
                     else:
                         raise
-
+                
                 zz.board=copy.deepcopy(qq.board)
                 zz.last_inner=copy.deepcopy(qq.last_inner)
                 zz.last_outer=copy.deepcopy(qq.last_outer)
                 zz.found_sofar=copy.deepcopy(qq.found_sofar)
-                
+                t=zz.iteration()
+                #yield t
                 
         zz.iteration()
     zz.limit +=1
