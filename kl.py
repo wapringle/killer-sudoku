@@ -468,8 +468,10 @@ class KillerSudoku:
             if t == 0:
                 return None
             if t == target:
-                return self.get_solution()
-        return None
+                yield self.get_solution()
+            else:
+                yield t
+        yield None
 
     def solve2(self):
         oldt = 0
@@ -478,12 +480,10 @@ class KillerSudoku:
         target = max(self.board_size) ** 2
         for i in range(40):
             t= self.iteration()
-            if t==0:
-               break 
             yield t
-                
-
-        yield None
+            if t==target or t==0:
+                break
+        yield 0
 
     def iteration(self):
         """ Repeat this loop until solution emerges. 
@@ -509,7 +509,7 @@ class KillerSudoku:
         self.removeSingleNumbers()
         # pprint.pprint(self.board)
         t = sum(map(len, self.board.values()))
-        print(t, self.turbo)
+        #print(t, self.turbo)
         if self.oldt == t:
             if self.turbo:
                 self.rule3(True)
@@ -532,22 +532,28 @@ class KillerSudoku:
 
 
 def doit(zz):
-    t=zz.solve()
-    if t:
-        return t
+    target = max(zz.board_size) ** 2
+    for t in zz.solve2():
+        if t==target:
+            return t
+        if t==0:
+            break
+        yield t
+        
 
     """ try heuristics """
 
     old_doubles=[]
-    target = max(zz.board_size) ** 2
     
     while True:
 
         doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==2 ]
-        print(doubles)
+        if doubles == []:
+            doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==3 ]
         if doubles == old_doubles:
             break
         
+        print(doubles)
         old_doubles=doubles
 
         x=zz.board_size
@@ -555,47 +561,65 @@ def doit(zz):
         qq=copy.deepcopy(zz)
         qq.board_size=x
         zz.board_size=x
-
-        for s,t in doubles:
-            for v in t:
+        #dz=dict(doubles)
+        dz={}
+        for k,v in doubles:
+            dz[k]=copy.deepcopy(v)
+        #print(dz)
+        for s,tt in dz.items():
+            #print(s,tt)
+            for v in tt:
                 print("Try setting",s,"to",v)
                 zz.board[s]={v}
                 try:
-                    tt=zz.solve()
-                    if tt:
-                        return tt
-                    """
-                    if s==(1,3) and v==9:
-                        raise EOFError
-                        """
+                    for t in zz.solve2():
+                        if t==target:
+                            return t
+                        if t==0:
+                            break
+                        yield t
                     
                 except Error as e:
                     if e.message=="No Solution":
                         # raised by fatal error
                         # this one didn't work, so other must be right
-                        print("Setting",s,"to",t-{v})
-                        qq.board[s]=t - {v}
+                        qq.board[s]=qq.board[s] - {v}
+                        print("Setting",s,"to",qq.board[s])
+                        for k,vv in dz.items():
+                            if len(zz.board[k])==1:
+                                dz[k] = vv - zz.board[k]
+                                print(f"accelerate {k} from {qq.board[k]} to {dz[k]}" )
+                                #qq.board[k]=dz[k]
+                                
+                        qq.solve()
+                    
+                        """
+                        for t in qq.solve2():
+                            if t==target:
+                                return t
+                            if t==0:
+                                break
                         pass
+                        """
+                        
                     else:
                         raise
 
-                if False:
-                    qq.board_size=None
-                    zz=copy.deepcopy(qq)
-                    qq.board_size=x
-                    zz.board_size=x
-                else:
-                    zz.board=copy.deepcopy(qq.board)
-                    zz.last_inner=copy.deepcopy(qq.last_inner)
-                    zz.last_outer=copy.deepcopy(qq.last_outer)
-                    zz.found_sofar=copy.deepcopy(qq.found_sofar)
+                zz.board=copy.deepcopy(qq.board)
+                zz.last_inner=copy.deepcopy(qq.last_inner)
+                zz.last_outer=copy.deepcopy(qq.last_outer)
+                zz.found_sofar=copy.deepcopy(qq.found_sofar)
                 
                 
         zz.iteration()
-    zz.limit +=3
+    zz.limit +=1
+    zz.last_inner = {}
+    zz.last_outer = {}
+    
     if zz.limit < 12:
         print("increasing limit to",zz.limit)
-        return doit(zz)
+        for t in doit(zz):
+            yield t
     else:
         return None
     
