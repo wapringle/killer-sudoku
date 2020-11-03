@@ -234,7 +234,7 @@ def show_solution(solution):
 
 
 import ktest
-testcase=18 
+testcase=17
 def sample(ev):
     global zz,boxList,testcase
     document["button1"].textContent = "Solve"
@@ -288,6 +288,9 @@ def ongoing():
                 if len(v)==1:
                     id=tuple2id(k)
                     document[id].text=str(list(v)[0])
+                else:
+                    id=tuple2id(k)
+                    document[id].text=""
     
             timer.set_timeout(ongoing,0)
         else:
