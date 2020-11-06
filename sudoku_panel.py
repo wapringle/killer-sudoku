@@ -22,14 +22,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
-from  browser import document, timer, alert
+from  browser import document, timer, bind
 import kl
+from browser.widgets.dialog import InfoDialog
 #from brythonInterface import boardSize
 
 boardSize=9
 
 boxList=[]
 gridDict={}
+
+canMouse=True
+def myAlert(txt):
+    global canMouse
+    canMouse=False
+    
+    document["help"].style["border-style"]="inset"
+    d=InfoDialog("Alert!",txt,ok=True)
+    @bind(d.ok_button, "click")
+    def ok(ev):
+        document["help"].style["border-style"]="outset" 
+        canMouse=True
+
 
 def tuple2id(t): return "i%d%d" % t
 
@@ -136,7 +150,7 @@ def remove_box_for_id(id):
 def setCageStyle(idList,style):
     def makeEdge(t,border):
         if tuple2id(t) not in idList:
-            setattr(document[id].style,border,style)
+            setattr(document["td"+id].style,border,style)
     for id in idList:
         (r,c)=id2tuple(id)
         makeEdge((r,c-1) , "borderLeft")
@@ -158,6 +172,8 @@ def set_backGround(id,cell):
     document[id].style.backgroundColor=cell.status.background
     
 def on_number_button_pressed(ev):  # wxGlade: MyFrame.<event_handler>
+    global canMouse
+    if not canMouse: return
     
     idList=get_clicked_cells()
     if idList==[]:
@@ -166,6 +182,8 @@ def on_number_button_pressed(ev):  # wxGlade: MyFrame.<event_handler>
     itm=ev.currentTarget
     boxCount=int(itm.text)
     add_cage(boxCount,idList)
+    document[itm.id].style.borderStyle="inset"
+    
     
 def add_cage(boxCount,idList):
     global boxList,gridDict
@@ -182,11 +200,13 @@ def add_cage(boxCount,idList):
     #b0.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
     itm.text=str(boxCount)
     boxList.append((boxCount,idList))
-    setCageStyle(idList,"solid thick")
+    setCageStyle(idList,"solid")
         
         
     
 def on_grid_button_pressed(ev): 
+    global canMouse
+    if not canMouse: return
     itm=ev.currentTarget
     idList=members_of_group(itm.id,True)
     for id in idList:
@@ -194,12 +214,13 @@ def on_grid_button_pressed(ev):
         cell.action("click")
         set_backGround(id, cell)
         document[id].text=""
-        #document[id].style.backgroundColor=cell.status.background()
     if len(idList)>1:
         setCageStyle(idList,"solid thin")
     remove_box_for_id(itm.id)
     
 def on_mouse_enter(ev): 
+    global canMouse
+    if not canMouse: return
     #document["progress"].text=f'entering {ev.currentTarget.id} {gridDict[ev.currentTarget.id].status.name()}'
     global gridDict
     itm=ev.currentTarget
@@ -211,6 +232,8 @@ def on_mouse_enter(ev):
         #document[id].style.backgroundColor=cell.status.background()
     
 def on_mouse_leave(ev): 
+    global canMouse
+    if not canMouse: return
     itm=ev.currentTarget
     idList=members_of_group(itm.id,True)
     for id in idList:
@@ -229,12 +252,12 @@ def show_solution(solution):
             document[id].text=str(v)
 #            document[id].style.backgroundColor='white';
     else:
-        alert("can't find solution")
+        myAlert("can't find solution")
 
 
 
 import ktest
-testcase=17
+testcase=13
 def sample(ev):
     global zz,boxList,testcase
     document["button1"].textContent = "Solve"
@@ -245,6 +268,9 @@ def sample(ev):
     
 
 def change(event):
+    global canMouse
+    canMouse = False
+    
     global zz,qq,boxList,generator,doubles
     zz=kl.KillerSudoku(boardSize)
     try:
@@ -253,7 +279,8 @@ def change(event):
         zz.load([ (n,list(map(id2tuple,idList)))  for (n,idList) in boxList])
         generator=kl.doit(zz)
     except Exception as e:
-        alert(" ".join(map(str,e.args)) )
+        myAlert(" ".join(map(str,e.args)) )
+        canMouse=True
         return
     
     document["progress"].text=""
@@ -302,10 +329,16 @@ def ongoing():
         print("done")
         show_solution(zz.get_solution())
         document["button1"].textContent = "done"
+        global canMouse
+        canMouse = True
+        
         pass
     except Exception as e:
-        print(e)
-        raise
+        document["button1"].textContent = "Solve"
+        global canMouse
+        canMouse = True
+        myAlert(e.message)
+
         
         
 def junk():
@@ -343,7 +376,7 @@ def junk():
             
         except StopIteration:
             document["button1"].textContent = "failed"
-            alert("No Solution" )
+            myAlert("No Solution" )
             return    
     
 
