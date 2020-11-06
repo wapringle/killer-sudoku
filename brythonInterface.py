@@ -26,7 +26,7 @@ from browser import document, html, alert,bind
 from browser.html import *
 from browser.widgets.dialog import InfoDialog
 
-from sudoku_panel import on_mouse_enter, on_mouse_leave, on_grid_button_pressed, on_number_button_pressed, sample, change, initCell
+from sudoku_panel import on_mouse_enter, on_mouse_leave, on_grid_button_pressed, on_number_button_pressed, sample, change, initCell, canMouse
 
 
 def make_numbers():
@@ -57,7 +57,7 @@ def make_grid(grid):
     # returns an HTML table with 9 rows and 9 columns
     global current_cell, gridDict
 
-    t = html.TABLE()
+    t = html.TABLE(Class="grid")
     for i in range(grid_step):
         cg = html.COLGROUP()
         for j in range(grid_step):
@@ -67,7 +67,6 @@ def make_grid(grid):
     # for i,val in enumerate(grid):
     #    row, column = divmod(i, boardSize)
     val = " "
-    i = 0
     for row in range(board_size):
         for column in range(board_size):
             if row > srow:
@@ -79,17 +78,19 @@ def make_grid(grid):
                 srow = row
 
             id = initCell(row + 1, column + 1)
-            cell = html.TD(val, id=id, Class="unused")
+            cell = html.DIV(val, id=id, Class="unused")
             cell.bind("mouseenter", on_mouse_enter)
             cell.bind("mouseleave", on_mouse_leave)
             cell.bind("click", on_grid_button_pressed)
             cell.style.contentEditable = True
+            
+            td = html.TD(id="td"+id)
+            td <= cell
             if column % grid_step == 0:
-                cell.style.borderLeftWidth = "1px"
+                td.style.borderLeftWidth = "1px"
             if column == board_size - 1:
-                cell.style.borderRightWidth = "1px"
-            line <= cell
-            i += 1
+                td.style.borderRightWidth = "1px"
+            line <= td
 
     current_cell = None
     print(t)
@@ -140,6 +141,10 @@ def init():
 
     @bind(document["help"],"click")
     def help(ev) :
+        global canMouse
+        if not canMouse: return
+        canMouse=False
+        
         txt="""Click on cells to build cages, then click on number button to select 
         total for cage.<p>When complete, press 'Solve'.
         <p>
@@ -147,5 +152,15 @@ def init():
         <p>
         For background see https://en.wikipedia.org/wiki/Killer_sudoku 
         """
-        InfoDialog("Help",txt,ok=True)
+        document["help"].style["border-style"]="inset"
+        d=InfoDialog("Help",txt,ok=True)
+        @bind(d.ok_button, "click")
+        def ok(ev):
+            canMouse=True
+            document["help"].style["border-style"]="outset"
+        
+        
 
+"""
+<div style="color: black;font-size: medium;text-align: center;border-color: black;border-right-color: black;width: 100%;/* border-right:  thick solid; */border-left: thick solid;height: 100%;">11</div>
+"""
