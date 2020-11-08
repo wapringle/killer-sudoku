@@ -150,12 +150,13 @@ def init():
         <p>
         Press 'Sample' for a sample puzzle. 
         <p>
-        For background see https://en.wikipedia.org/wiki/Killer_sudoku 
+        For background see <a href='https://en.wikipedia.org/wiki/Killer_sudoku'>https://en.wikipedia.org/wiki/Killer_sudoku</a>
         """
         document["help"].style["border-style"]="inset"
-        d=InfoDialog("Help",txt,ok=True)
+        d=InfoDialog("Help",txt,ok=True, default_css=False)
         @bind(d.ok_button, "click")
         def ok(ev):
+            global canMouse
             canMouse=True
             document["help"].style["border-style"]="outset"
         
