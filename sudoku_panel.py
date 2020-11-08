@@ -38,9 +38,10 @@ def myAlert(txt):
     canMouse=False
     
     document["help"].style["border-style"]="inset"
-    d=InfoDialog("Alert!",txt,ok=True)
+    d=InfoDialog("Alert!",txt,ok=True, default_css=False)
     @bind(d.ok_button, "click")
     def ok(ev):
+        global canMouse
         document["help"].style["border-style"]="outset" 
         canMouse=True
 
@@ -153,10 +154,14 @@ def setCageStyle(idList,style):
             setattr(document["td"+id].style,border,style)
     for id in idList:
         (r,c)=id2tuple(id)
-        makeEdge((r,c-1) , "borderLeft")
-        makeEdge((r,c+1) , "borderRight")
-        makeEdge((r-1,c) , "borderTop")
-        makeEdge((r+1,c) , "borderBottom")
+        if c>1:
+            makeEdge((r,c-1) , "borderLeft")
+        if c<9:
+            makeEdge((r,c+1) , "borderRight")
+        if r>1:
+            makeEdge((r-1,c) , "borderTop")
+        if r<9:
+            makeEdge((r+1,c) , "borderBottom")
 
 
 def get_clicked_cells():
@@ -341,44 +346,6 @@ def ongoing():
 
         
         
-def junk():
-    
-        def yy(l):
-            for s,v in l:
-                i=0
-                for vv in v: #reversed( [ x for x in v]):
-                    yield (s,vv,i)
-                    i+=1
-                
-            
-        if not doubles:
-            doubles=yy( (s,v) for (s,v) in zz.board.items() if len(v)==2 )
-            document["button1"].textContent = "Heuristic"
-            bsave=copy.deepcopy(zz.board)
-            
-        try:
-            (s,v,i)=next(doubles)
-            if i==1 and e.args==("Failed to find solution",):
-                #skip this one
-                (s,v,i)=next(doubles)
-                
-            zz.board=copy.deepcopy(bsave)
-            #zz.turbo=False
-            print("copied")
-
-            print("Try setting",s,"from",zz.board[s],"to",v)
-            zz.board[s]={v}
-            zz.last_inner={}
-            zz.last_outer={}
-            generator=zz.solve2()
-            timer.set_timeout(ongoing,0)
-            return
-            
-        except StopIteration:
-            document["button1"].textContent = "failed"
-            myAlert("No Solution" )
-            return    
-    
 
 """
 from browser import bind, worker, window
