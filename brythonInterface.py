@@ -33,15 +33,18 @@ def make_numbers():
     t = html.TABLE()
     tb = html.TBODY()
     t <= tb
-    i = 1
+    i = 0
     val = ""
     for row in range(5):
         line = html.TR()
         tb <= line
         for column in range(10):
-            b = html.BUTTON(str(i), id="x%s" % i, Class="nobutton")
+            if i>0:
+                b = html.BUTTON(str(i), id="x%s" % i, Class="nobutton")
+                b.bind("click", on_number_button_pressed)
+            else:
+                b = html.SPAN("")
             cell = html.TD(b)
-            b.bind("click", on_number_button_pressed)
             line <= cell
             i += 1
     return t

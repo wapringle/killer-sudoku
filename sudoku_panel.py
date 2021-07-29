@@ -32,6 +32,13 @@ boardSize=9
 boxList=[]
 gridDict={}
 
+def debug_evt(func):
+    def wrapper(ev):
+        print(func.__name__, ev.currentTarget.id)
+        func(ev)
+    return wrapper
+
+
 canMouse=True
 def myAlert(txt):
     global canMouse
@@ -56,6 +63,7 @@ for a,b in re.findall(r'def (\w*).*:\n *return (\w*)',t,flags=re.MULTILINE): pri
 """
 class State():
     def is_clicked(self): return False
+        
     def name(self): 
         return self.__class__.__name__
     def mousein(self):
@@ -65,58 +73,74 @@ class State():
     def click(self):
         return None
     def grouped(self):
-        return caged()
+        return StateMachine.caged
+    def cancel(self):
+        return None
     
 class unused(State):
     background='ivory'
 
     def mousein(self):
-        return highlight()
+        return StateMachine.highlight
     
 class highlight(State):
     background='#eefbff'
 
     def click(self):
-        return clicked()
+        return StateMachine.clicked
     def mouseout(self):
-        return unused()
+        return StateMachine.unused
     
 class clicked(State):
     background='#f33fba4d'
     
     def is_clicked(self): return True
     def grouped(self):
-        return caged()
+        return StateMachine.caged
     def click(self):
-        return highlight()
+        return StateMachine.highlight
     def mousein(self):
-        return clicked()
+        return StateMachine.clicked
     def mouseout(self):
-        return clicked()
+        return StateMachine.clicked
+    def cancel(self):
+        return StateMachine.unused
     
 class caged(State):
     background='beige'
 
     def grouped(self):
-        return caged()
+        return StateMachine.caged
     def mousein(self):
         if some_cells_clicked():
-            return caged()
+            return StateMachine.caged
         else:
-            return higrouped()
+            return StateMachine.higrouped
     def click(self):
-        return caged()
+        return StateMachine.caged
     
     def mouseout(self):
-        return caged()
+        return StateMachine.caged
     
 class higrouped(State):
     background='bisque'
 
     def mouseout(self):
-        return caged()
+        return StateMachine.caged
     def click(self):
-        return clicked()
+        return StateMachine.clicked
+    
+class StateMachine():
+    def __init__(self):
+        # Initial state
+        StateMachine.__init__(self, StateMachine.unused)
+
+StateMachine.unused=unused()
+StateMachine.highlight=highlight()    
+StateMachine.clicked=clicked()
+StateMachine.caged=caged()
+StateMachine.highgrouped=higrouped()
+
     
     
     
@@ -128,6 +152,13 @@ class GridSquare():
         self.status=unused()
     def action(self,act):
         self.status=getattr(self.status,act)()
+        document[self.id].style.backgroundColor=self.status.background
+    def a2(self,fun):
+        self.status=self.status.fun()
+        document[self.id].style.backgroundColor=self.status.background
+    def xcancel(self):
+        self.status=self.status.cancel()
+        
 
 def initCell(row,column):
     global gridDict
@@ -175,7 +206,8 @@ def set_backGround(id,cell):
     #document[id].Class=cell.status.name()
     
     document[id].style.backgroundColor=cell.status.background
-    
+
+@debug_evt
 def on_number_button_pressed(ev):  # wxGlade: MyFrame.<event_handler>
     global canMouse
     if not canMouse: return
@@ -209,20 +241,31 @@ def add_cage(boxCount,idList):
         
         
     
+@debug_evt
 def on_grid_button_pressed(ev): 
     global canMouse
     if not canMouse: return
+    
+    if True:
+        idList=get_clicked_cells()
+        for id in idList:
+            cell=gridDict[id]
+            cell.action("cancel")
+            ## set_backGround(id, cell)
+    
     itm=ev.currentTarget
     idList=members_of_group(itm.id,True)
     for id in idList:
         cell=gridDict[id]
         cell.action("click")
-        set_backGround(id, cell)
+        cell.action("mouseout")
+        ## set_backGround(id, cell)
         document[id].text=""
     if len(idList)>1:
         setCageStyle(idList,"solid thin")
     remove_box_for_id(itm.id)
-    
+
+@debug_evt    
 def on_mouse_enter(ev): 
     global canMouse
     if not canMouse: return
@@ -231,11 +274,13 @@ def on_mouse_enter(ev):
     itm=ev.currentTarget
     for id in members_of_group(itm.id,True):
         cell=gridDict[id]
-        cell.action("mousein")
-        set_backGround(id, cell)
+        #cell.action("mousein")
+        cell.status=cell.status.mousein()
+        ## set_backGround(id, cell)
         
         #document[id].style.backgroundColor=cell.status.background()
-    
+
+@debug_evt 
 def on_mouse_leave(ev): 
     global canMouse
     if not canMouse: return
@@ -244,7 +289,7 @@ def on_mouse_leave(ev):
     for id in idList:
         cell=gridDict[id]
         cell.action("mouseout")
-        set_backGround(id, cell)
+        ## set_backGround(id, cell)
         #document[id].style.backgroundColor=cell.status.background()
     
 
@@ -262,7 +307,7 @@ def show_solution(solution):
 
 
 import ktest
-testcase=13
+testcase=18
 def sample(ev):
     global zz,boxList,testcase
     document["button1"].textContent = "Solve"
@@ -309,6 +354,7 @@ def report(num):
 
 def ongoing():
     global zz,bsave,generator
+    global canMouse
 
     try:
         t=next(generator)
@@ -334,13 +380,11 @@ def ongoing():
         print("done")
         show_solution(zz.get_solution())
         document["button1"].textContent = "done"
-        global canMouse
         canMouse = True
         
         pass
     except Exception as e:
         document["button1"].textContent = "Solve"
-        global canMouse
         canMouse = True
         myAlert(e.message)
 

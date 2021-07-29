@@ -127,6 +127,20 @@ def unpackGroup(squares):
     return res
 
 
+
+def doubles(board,rcg):
+    def invert(data):
+        for k,v in data:
+            for v0 in v:
+                yield v0,k
+
+    res={}
+    for k,v in invert([(y,board[y]) for y in rcg]):
+        res[k]=res.get(k,set())| {v}
+    return [ (k,v) for k,v in res.items() if len(v)==2]
+
+
+
 ########################################################################
 class KillerSudoku:
     """Methods to solve the Killer Sudoku """
@@ -189,6 +203,7 @@ class KillerSudoku:
             return rows, cols, grids
 
         self.cage_list = []
+        self.oldt = 0
 
         test_box = set(self.board.keys())
         boxTotal = 0
@@ -207,14 +222,20 @@ class KillerSudoku:
 
             self.cage_list.append((box_count, cage, rows, cols, grids))
 
+        for (box_count, cage, rows, cols, grids) in self.cage_list:
+            if len(cage)>1 or box_count>9:
+                break
+        else:
+            self.inners = sorted(self.getInners())
+            self.outers=[]
+            return
+
         if len(test_box) != 0:
             raise Error(f'Missing {test_box}')
-
         if boxTotal != self.line_total * max(self.board_size):
             raise Error(f'Incorrect total {boxTotal - self.line_total * max(self.board_size)}')
         self.inners = sorted(self.getInners())
         self.outers = sorted(self.getOuters())
-        self.oldt = 0
         return
 
     def collect(self, fun):
@@ -224,6 +245,12 @@ class KillerSudoku:
             tot += itm[0]
             b += itm[1]
         return (tot, set(b))
+    
+    def getCol(self,col):
+        return [ self.board[(x,col)] for x in self.board_size]
+
+    def getRow(self,row):
+        return [ self.board[(row,y)] for y in self.board_size]
 
     def getInners(self):
         """ look for rows, columns or squares that completely enclose a number of cages. We can calculate the 
@@ -338,7 +365,12 @@ class KillerSudoku:
         def removeSingleNumber(k, n):
             x, y = k
             sn = {n}
-            cells = self.rows[y] | self.cols[x] | self.grids[self.grid(x, y)]  | set([ p[1] for p in self.cage_list if k in p[1]][0])
+            try:
+                cages=set([ p[1] for p in self.cage_list if k in p[1]][0])
+            except IndexError:
+                # in case cage doent cover this square
+                cages=set()
+            cells = self.rows[y] | self.cols[x] | self.grids[self.grid(x, y)]  | cages
             foundMore = False
             for c in cells:
                 if k == c:
@@ -507,6 +539,7 @@ class KillerSudoku:
         self.rule2()
         self.rule3()
         self.removeSingleNumbers()
+        self.Xget_doubles()
         # pprint.pprint(self.board)
         t = sum(map(len, self.board.values()))
         #print(t, self.turbo)
@@ -529,6 +562,30 @@ class KillerSudoku:
         for k, v in self.board.items():
             assert len(v) ==1
         return dict([(k, v.pop()) for k, v in self.board.items()])
+    
+    def get_doubles(self):
+        return [ (s,t) for (s,t) in self.board.items() if len(t)==2 ]
+    
+
+    def Xget_doubles(self):
+        dbl=[]
+        for rcg in self.board_size:
+            dbl += doubles(self.board,self.rows[rcg])
+            dbl += doubles(self.board,self.cols[rcg])
+            dbl += doubles(self.board,self.grids[rcg])
+            
+        for k,v in dbl:
+            for i in self.board_size:
+                for rcg in [self.rows[i],self.cols[i],self.grids[i]]:
+                    if v < rcg:
+                        for s in rcg - v:
+                            if debug:
+                                #print(f'remove {k} from {s}')
+                                pass
+                            self.board[s] = self.board[s] - {k}
+    
+    
+    
 
 
 def doit(zz):
@@ -543,25 +600,29 @@ def doit(zz):
 
     """ try heuristics """
 
-    old_doubles=[]
+    old_2doubles=[]    
+    old_3doubles=[]
     
     while True:
         """
         Find squares with doubles(or triples) that we can attempt trial solutions in sequence.
-        If we hit an impossible solution, that trial MUST be wrang, also any singletons found
-        as a result that trial mut also be wrong
+        If we hit an impossible solution, that trial MUST be wrong, also any singletons found
+        as a result that trial must also be wrong
         """
-        doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==2 ]
-        if doubles == []:
+        doubles=zz.get_doubles()
+        if doubles == old_2doubles:
             # no doubles, so go for triples
             doubles=[ (s,t) for (s,t) in zz.board.items() if len(t)==3 ]
+            if doubles == old_3doubles:
+                # all options on this pass exhausted
+                break
+            else:
+                old_3doubles=copy.deepcopy(doubles)
+        else:
+            old_2doubles=doubles
         
-        if doubles == old_doubles:
-            # all options on this pass exhausted
-            break
         
         print(doubles)
-        old_doubles=doubles
 
         qq=copy.deepcopy(zz)
         dz=dict((k,copy.deepcopy(v)) for k,v in doubles )
