@@ -28,7 +28,7 @@ import math
 import pprint
 from functools import partial
 from itertools import permutations,product,combinations
- 
+# 
 # exception classes
 class Error(Exception):
     """Base class for ConfigParser exceptions."""
