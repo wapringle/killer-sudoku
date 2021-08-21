@@ -170,89 +170,7 @@ class State():
             return self.caged
         elif ev==MouseEvent.CLICK:
             return self.clicked
-"""
-class State():
-    def is_clicked(self): return False
-        
-    def name(self): 
-        return self.__class__.__name__
-    def mousein(self):
-        return None
-    def mouseout(self):
-        return None
-    def click(self):
-        return None
-    def grouped(self):
-        return StateMachine.caged
-    def cancel(self):
-        return None
-    
-class unused(State):
-    background='ivory'
-
-    def mousein(self):
-        return StateMachine.highlight
-    
-class highlight(State):
-    background='#eefbff'
-
-    def click(self):
-        return StateMachine.clicked
-    def mouseout(self):
-        return StateMachine.unused
-    
-class clicked(State):
-    background='#f33fba4d'
-    
-    def is_clicked(self): return True
-    def grouped(self):
-        return StateMachine.caged
-    def click(self):
-        return StateMachine.highlight
-    def mousein(self):
-        return StateMachine.clicked
-    def mouseout(self):
-        return StateMachine.clicked
-    def cancel(self):
-        return StateMachine.unused
-    
-class caged(State):
-    background='beige'
-
-    def grouped(self):
-        return StateMachine.caged
-    def mousein(self):
-        if some_cells_clicked():
-            return StateMachine.caged
-        else:
-            return StateMachine.higrouped
-    def click(self):
-        return StateMachine.caged
-    
-    def mouseout(self):
-        return StateMachine.caged
-    
-class higrouped(State):
-    background='bisque'
-
-    def mouseout(self):
-        return StateMachine.caged
-    def click(self):
-        return StateMachine.clicked
-    
-class StateMachine():
-    def __init__(self):
-        # Initial state
-        StateMachine.__init__(self, StateMachine.unused)
-
-StateMachine.unused=unused()
-StateMachine.highlight=highlight()    
-StateMachine.clicked=clicked()
-StateMachine.caged=caged()
-StateMachine.highgrouped=higrouped()
-
-"""
-    
+ 
     
     
     
@@ -415,7 +333,7 @@ def show_solution(solution):
 
 
 import ktest
-testcase=18
+testcase=10
 def sample(ev):
     global zz,boxList,testcase
     document["button1"].textContent = "Solve"
