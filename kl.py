@@ -28,7 +28,7 @@ import math
 import pprint
 from functools import partial
 from itertools import permutations,product,combinations
-
+# 
 # exception classes
 class Error(Exception):
     """Base class for ConfigParser exceptions."""
@@ -425,7 +425,7 @@ class KillerSudoku:
                                 target -= self.board[rc]
                                 if target == set():
                                     break
-                        if target != set():
+                        if target != set() and target!= self.board[(x, y)]:
                             dbg("Rule 2 finds", (x, y), target)
                             self.board[(x, y)] = target
                             if len(target)==1:

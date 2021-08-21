@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
+from enum import Enum,auto
 from  browser import document, timer, bind
 import kl
 from browser.widgets.dialog import InfoDialog
@@ -34,7 +35,7 @@ gridDict={}
 
 def debug_evt(func):
     def wrapper(ev):
-        print(func.__name__, ev.currentTarget.id)
+        #print(func.__name__, ev.currentTarget.id)
         func(ev)
     return wrapper
 
@@ -60,6 +61,115 @@ def id2tuple(id): return (int(id[1]),int(id[2]))
 """
 for a,b in re.findall(r'def (\w*).*:\n *return (\w*)',t,flags=re.MULTILINE): print(f'    {a}={b}')
 
+"""
+
+
+class MouseEvent(Enum):
+    MOUSEIN = auto()
+    MOUSEOUT = auto()
+    CLICK = auto()
+    GROUPED = auto()
+    CANCEL = auto()
+
+
+class State():
+    def __init__(self):
+        self.state=self.unused
+        
+    def get_background(self):
+        
+        bgrounds={
+        self.unused:'ivory',
+        self.highlight:'#eefbff',
+        self.clicked: '#f33fba4d',
+        self.caged: 'beige',
+        self.higrouped: 'bisque'
+        } 
+        
+        if self.state==self.unused:  return 'ivory'
+        if self.state==self.highlight:  return '#eefbff'
+        if self.state==self.clicked:  return '#f33fba4d'
+        if self.state==self.caged:  return 'beige'
+        if self.state==self.higrouped:  return 'bisque'
+        
+        
+        print(self.name(),bgrounds[self.caged])
+        return bgrounds[self.state]
+        
+    def event(self,ev:MouseEvent):
+        newstate=self.state(ev)
+        if newstate:
+            self.state=newstate
+            
+    def is_clicked(self): 
+        if self.state==self.clicked:
+            return True
+        return False
+        
+    def name(self): 
+        return self.state.__name__
+
+
+    """ States """
+    
+    def unused(self,ev: MouseEvent):
+        self.background='ivory'
+        if ev==MouseEvent.MOUSEIN:
+            return self.highlight
+        else:
+            return None
+        
+    def highlight(self,ev: MouseEvent):
+        self.background='#eefbff'
+    
+        if ev==MouseEvent.CLICK:
+            return self.clicked
+        elif ev==MouseEvent.MOUSEOUT:
+            return self.unused
+        else:
+            return None
+       
+    def clicked(self,ev: MouseEvent):
+        self.background='#f33fba4d'
+        
+        if ev==MouseEvent.GROUPED:
+            return self.caged
+        elif ev==MouseEvent.CLICK:
+            return self.highlight
+        elif ev==MouseEvent.MOUSEIN:
+            return self.clicked
+        elif ev==MouseEvent.MOUSEOUT:
+            return self.clicked
+        elif ev==MouseEvent.CANCEL:
+            return self.unused
+        else:
+            return None
+        
+    def caged(self,ev: MouseEvent):
+        self.background='beige'
+    
+        if ev==MouseEvent.GROUPED:
+            return self.caged
+        elif ev==MouseEvent.CLICK:
+            return self.caged
+        elif ev==MouseEvent.MOUSEIN:
+            if some_cells_clicked():
+                return self.caged
+            else:
+                return self.higrouped
+        elif ev==MouseEvent.MOUSEOUT:
+            return self.caged
+        else:
+            return None
+
+        
+    def higrouped(self,ev: MouseEvent):
+        self.background='bisque'
+    
+        if ev==MouseEvent.MOUSEOUT:
+            return self.caged
+        elif ev==MouseEvent.CLICK:
+            return self.clicked
 """
 class State():
     def is_clicked(self): return False
@@ -141,21 +251,25 @@ StateMachine.clicked=clicked()
 StateMachine.caged=caged()
 StateMachine.highgrouped=higrouped()
 
+"""
     
     
     
     
     
-class GridSquare():
+class GridSquare(State):
     def __init__(self,id):
+        super().__init__()
         self.id=id
-        self.status=unused()
-    def action(self,act):
-        self.status=getattr(self.status,act)()
-        document[self.id].style.backgroundColor=self.status.background
-    def a2(self,fun):
+        #self.state=State()
+    def action(self,act: MouseEvent):
+        self.event(act)
+        document[self.id].style.backgroundColor=self.get_background()
+        i=1
+    
+    def xa2(self,fun):
         self.status=self.status.fun()
-        document[self.id].style.backgroundColor=self.status.background
+        document[self.id].style.backgroundColor=self.status.get_background()
     def xcancel(self):
         self.status=self.status.cancel()
         
@@ -196,7 +310,7 @@ def setCageStyle(idList,style):
 
 
 def get_clicked_cells():
-    return sorted([k for k,v in gridDict.items() if v.status.is_clicked() ])
+    return sorted([k for k,v in gridDict.items() if v.is_clicked() ])
 
 def some_cells_clicked():
     return False #len(get_clicked_cells())>0
@@ -205,7 +319,7 @@ def set_backGround(id,cell):
     #print(f'cell {id} class from {document[id].Class} to {cell.status.name()}')
     #document[id].Class=cell.status.name()
     
-    document[id].style.backgroundColor=cell.status.background
+    document[id].style.backgroundColor=cell.get_background()
 
 @debug_evt
 def on_number_button_pressed(ev):  # wxGlade: MyFrame.<event_handler>
@@ -226,10 +340,9 @@ def add_cage(boxCount,idList):
     global boxList,gridDict
     for s in idList:
         b=gridDict[s]
-        b.action("grouped")
+        b.action(MouseEvent.GROUPED)
         itm=document[b.id]
         set_backGround(b.id, b)
-        #itm.style.backgroundColor=b.status.background()
         itm.text=""
         
     b0=gridDict[idList[0]]
@@ -246,20 +359,19 @@ def on_grid_button_pressed(ev):
     global canMouse
     if not canMouse: return
     
-    if True:
+    if False:
         idList=get_clicked_cells()
         for id in idList:
             cell=gridDict[id]
-            cell.action("cancel")
+            cell.action(MouseEvent.CANCEL)
             ## set_backGround(id, cell)
     
     itm=ev.currentTarget
     idList=members_of_group(itm.id,True)
     for id in idList:
         cell=gridDict[id]
-        cell.action("click")
-        cell.action("mouseout")
-        ## set_backGround(id, cell)
+        cell.action(MouseEvent.CLICK)
+        #cell.action(MouseEvent.MOUSEOUT)
         document[id].text=""
     if len(idList)>1:
         setCageStyle(idList,"solid thin")
@@ -274,11 +386,7 @@ def on_mouse_enter(ev):
     itm=ev.currentTarget
     for id in members_of_group(itm.id,True):
         cell=gridDict[id]
-        #cell.action("mousein")
-        cell.status=cell.status.mousein()
-        ## set_backGround(id, cell)
-        
-        #document[id].style.backgroundColor=cell.status.background()
+        cell.action(MouseEvent.MOUSEIN)
 
 @debug_evt 
 def on_mouse_leave(ev): 
@@ -288,7 +396,7 @@ def on_mouse_leave(ev):
     idList=members_of_group(itm.id,True)
     for id in idList:
         cell=gridDict[id]
-        cell.action("mouseout")
+        cell.action(MouseEvent.MOUSEOUT)
         ## set_backGround(id, cell)
         #document[id].style.backgroundColor=cell.status.background()
     
